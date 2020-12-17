@@ -1,9 +1,13 @@
 {
   "name": "youtube_downloader",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/app.js",
   "license": "MIT",
+  "scripts": {
+    "start": "tsc && node app.js"
+  },
   "dependencies": {
+    "@types/cheerio": "^0.22.23",
     "cheerio": "^1.0.0-rc.3",
     "fs": "^0.0.1-security",
     "puppeteer": "^5.5.0",
@@ -15,8 +19,5 @@
     "eslint": "^7.15.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1"
-  },
-  "scripts": {
-    "start": "tsc app.ts && node dist/app.js"
   }
 }
