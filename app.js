@@ -3,6 +3,7 @@ const youtubedl = require('youtube-dl');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+const pqueue = require('p-queue');
 class YoutubeDownloader {
     constructor(url) {
         this.pathArrayUrlsToDownload = "./urlsToDownload.json";
@@ -27,15 +28,31 @@ class YoutubeDownloader {
         }
     }
     async downloadVideoFromUrl(url) {
-        const video = await youtubedl('http://www.youtube.com/watch?v=90AiXO1pAiA', ['--format=18'], { cwd: __dirname });
-        await video.pipe(fs.createWriteStream('myvideo.mp4'));
+        let name;
+        const video = youtubedl(url, ['--format=18'], { cwd: __dirname });
+        return video.on('info', async (info) => {
+            console.log('Download started');
+            console.log('filename: ' + info._filename);
+            console.log('size: ' + info.size);
+            name = info._filename;
+            await video.pipe(fs.createWriteStream("videos/" + name));
+        });
     }
     async downloadVideosFromArrayOfUrls() {
+        const queue = new pqueue.default({ concurrency: 1, autoStart: true });
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
         const dataParsed = JSON.parse(data);
-        dataParsed.urls.map((url) => {
-            this.downloadVideoFromUrl(this.url + "" + url);
-        });
+        for (const url of dataParsed.urls) {
+            console.log(url);
+            await queue.add(async () => {
+                await this.downloadVideoFromUrl(this.url + "" + url);
+            });
+        }
+    }
+    buildFetchPromise() {
+        const data = fs.readFileSync(this.pathArrayUrlsToDownload);
+        const dataParsed = JSON.parse(data);
+        return dataParsed.urls.map((url) => this.downloadVideoFromUrl(this.url + "" + url));
     }
     async getListOfUrls(data) {
         const $ = cheerio.load(data);
