@@ -1,6 +1,7 @@
 const youtubedl = require('youtube-dl');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 interface IyoutubeDownloader {
     url: string;
@@ -8,7 +9,8 @@ interface IyoutubeDownloader {
 
 class YoutubeDownloader implements IyoutubeDownloader {
     public url;
-    private path = "./list-urls";
+    private pathArrayUrlsToDownload = "./urlsToDownload.json";
+    private pathArrayDownloaded = "./urlsDownloaded.json";
 
     constructor(url: string) {
         this.url = url;
@@ -32,6 +34,23 @@ class YoutubeDownloader implements IyoutubeDownloader {
         }
     }
 
+    public async downloadVideoFromUrl(url: string) {
+        const video = await youtubedl('http://www.youtube.com/watch?v=90AiXO1pAiA',
+            ['--format=18'],
+            {cwd: __dirname})
+
+        await video.pipe(fs.createWriteStream('myvideo.mp4'))
+    }
+
+    public async downloadVideosFromArrayOfUrls() {
+        const data = fs.readFileSync(this.pathArrayUrlsToDownload);
+        const dataParsed = JSON.parse(data);
+
+        dataParsed.urls.map((url: string) => {
+            this.downloadVideoFromUrl(this.url + "" + url)
+        });
+    }
+
     private async getListOfUrls(data: string) {
         const $ = cheerio.load(data);
         let urlsArray: Array<string> = [];
@@ -46,7 +65,6 @@ class YoutubeDownloader implements IyoutubeDownloader {
         try {
             await page.evaluate(async (_: any) => {
                     await new Promise(async (resolve) => {
-                        console.log("ici");
                         let totalHeight = 0
                         let distance = 400
                         let interval = 400
@@ -67,14 +85,29 @@ class YoutubeDownloader implements IyoutubeDownloader {
         }
     }
 
-    public async test() {
+    private async saveToJson(path: string, contentToAdd: Array<string>, force?: false) {
+        if (!fs.existsSync(path)) fs.writeFileSync(path, '{"urls":[]}');
+        let file = fs.readFileSync(path);
+        let fileParsed = JSON.parse(file);
+        if (contentToAdd.length > 0) {
+            contentToAdd.map(item => {
+                if (item) {
+                    fileParsed.urls.push(item);
+                }
+            })
+        }
+        fs.writeFileSync(path, JSON.stringify(fileParsed));
+
+    }
+
+    public async getAndSaveUrlsToDownload() {
         const html = await this.fetchHtmlFromYoutube();
         const arrayOfUrls = await this.getListOfUrls(html);
-        console.log(arrayOfUrls);
+        await this.saveToJson(this.pathArrayUrlsToDownload, arrayOfUrls);
     }
 }
 
 
 const yt = new YoutubeDownloader("https://www.youtube.com/user/IciJapon/videos");
 
-yt.test();
+yt.downloadVideosFromArrayOfUrls();

@@ -2,27 +2,40 @@
 const youtubedl = require('youtube-dl');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 class YoutubeDownloader {
     constructor(url) {
-        this.path = "./list-urls";
+        this.pathArrayUrlsToDownload = "./urlsToDownload.json";
+        this.pathArrayDownloaded = "./urlsDownloaded.json";
         this.url = url;
     }
     async fetchHtmlFromYoutube() {
         try {
             const browser = await puppeteer.launch({
-                headless: false
+                headless: true
             });
             const page = await browser.newPage();
             page.setViewport({ width: 1280, height: 926 });
             await page.goto(this.url);
             await this.autoScroll(page);
             const content = await page.content();
-            //await browser.close();
+            await browser.close();
             return content;
         }
         catch (error) {
             console.log(error);
         }
+    }
+    async downloadVideoFromUrl(url) {
+        const video = await youtubedl('http://www.youtube.com/watch?v=90AiXO1pAiA', ['--format=18'], { cwd: __dirname });
+        await video.pipe(fs.createWriteStream('myvideo.mp4'));
+    }
+    async downloadVideosFromArrayOfUrls() {
+        const data = fs.readFileSync(this.pathArrayUrlsToDownload);
+        const dataParsed = JSON.parse(data);
+        dataParsed.urls.map((url) => {
+            this.downloadVideoFromUrl(this.url + "" + url);
+        });
     }
     async getListOfUrls(data) {
         const $ = cheerio.load(data);
@@ -38,7 +51,6 @@ class YoutubeDownloader {
         try {
             await page.evaluate(async (_) => {
                 await new Promise(async (resolve) => {
-                    console.log("ici");
                     let totalHeight = 0;
                     let distance = 400;
                     let interval = 400;
@@ -46,8 +58,6 @@ class YoutubeDownloader {
                         let scrollHeight = document.documentElement.scrollHeight;
                         window.scrollBy(0, distance);
                         totalHeight += distance;
-                        console.log("scrollHeight", scrollHeight);
-                        console.log("totalHeight", totalHeight);
                         if (totalHeight >= scrollHeight) {
                             clearInterval(timer);
                             resolve(true);
@@ -60,11 +70,25 @@ class YoutubeDownloader {
             console.log(error);
         }
     }
-    async test() {
+    async saveToJson(path, contentToAdd, force) {
+        if (!fs.existsSync(path))
+            fs.writeFileSync(path, '{"urls":[]}');
+        let file = fs.readFileSync(path);
+        let fileParsed = JSON.parse(file);
+        if (contentToAdd.length > 0) {
+            contentToAdd.map(item => {
+                if (item) {
+                    fileParsed.urls.push(item);
+                }
+            });
+        }
+        fs.writeFileSync(path, JSON.stringify(fileParsed));
+    }
+    async getAndSaveUrlsToDownload() {
         const html = await this.fetchHtmlFromYoutube();
         const arrayOfUrls = await this.getListOfUrls(html);
-        console.log(arrayOfUrls);
+        await this.saveToJson(this.pathArrayUrlsToDownload, arrayOfUrls);
     }
 }
 const yt = new YoutubeDownloader("https://www.youtube.com/user/IciJapon/videos");
-yt.test();
+yt.downloadVideosFromArrayOfUrls();
