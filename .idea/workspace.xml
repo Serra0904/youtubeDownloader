@@ -2,13 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d8c212e-1160-4d21-8fdc-a35feeea6396" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/app.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/myvideo.mp4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/urlsToDownload.json" beforeDir="false" afterPath="$PROJECT_DIR$/urlsToDownload.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/videos/L'uniforme au Japon (il y a aussi de bons côtés)-jd_d7U5qLEs.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/videos/L'uniforme au Japon (il y a aussi de bons côtés)-jd_d7U5qLEs.mp4" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/videos/La musique au Japon-Eo_0imfHVbU.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/videos/La musique au Japon-Eo_0imfHVbU.mp4" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/videos/Tout ce qui ne va pas avec ma maison au Japon-zyptQtnG7Gw.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/videos/Tout ce qui ne va pas avec ma maison au Japon-zyptQtnG7Gw.mp4" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +52,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1608201054108</updated>
-      <workItem from="1608201055371" duration="15884000" />
+      <workItem from="1608201055371" duration="16903000" />
     </task>
     <servers />
   </component>

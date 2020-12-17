@@ -28,31 +28,37 @@ class YoutubeDownloader {
         }
     }
     async downloadVideoFromUrl(url) {
-        let name;
-        const video = youtubedl(url, ['--format=18'], { cwd: __dirname });
-        return video.on('info', async (info) => {
-            console.log('Download started');
-            console.log('filename: ' + info._filename);
-            console.log('size: ' + info.size);
-            name = info._filename;
-            await video.pipe(fs.createWriteStream("videos/" + name));
+        return new Promise((resolve) => {
+            let name;
+            const video = youtubedl(url, ['--format=18'], { cwd: __dirname });
+            video.on('info', (info) => {
+                console.log('Download started');
+                console.log('filename: ' + info._filename);
+                console.log('size: ' + info.size);
+                name = info._filename;
+                video.pipe(fs.createWriteStream("videos/" + name));
+            });
+            video.on('end', () => {
+                console.log("ok");
+                resolve();
+            });
         });
     }
     async downloadVideosFromArrayOfUrls() {
         const queue = new pqueue.default({ concurrency: 1, autoStart: true });
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
         const dataParsed = JSON.parse(data);
-        for (const url of dataParsed.urls) {
-            console.log(url);
-            await queue.add(async () => {
+        dataParsed.urls.forEach((url) => {
+            queue.add(async () => {
                 await this.downloadVideoFromUrl(this.url + "" + url);
             });
-        }
-    }
-    buildFetchPromise() {
-        const data = fs.readFileSync(this.pathArrayUrlsToDownload);
-        const dataParsed = JSON.parse(data);
-        return dataParsed.urls.map((url) => this.downloadVideoFromUrl(this.url + "" + url));
+        });
+        // for (const url of dataParsed.urls) {
+        //     console.log(url);
+        //     await queue.add(() => {
+        //         return this.downloadVideoFromUrl(this.url + "" + url);
+        //     });
+        // }
     }
     async getListOfUrls(data) {
         const $ = cheerio.load(data);

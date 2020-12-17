@@ -36,15 +36,22 @@ class YoutubeDownloader implements IyoutubeDownloader {
     }
 
     public async downloadVideoFromUrl(url: string) {
-        let name: string;
-        const video = youtubedl(url, ['--format=18'], {cwd: __dirname})
-        video.on('info', async (info: any) => {
-            console.log('Download started')
-            console.log('filename: ' + info._filename)
-            console.log('size: ' + info.size)
-            name = info._filename;
-            await video.pipe(fs.createWriteStream("videos/" + name))
+        return new Promise((resolve: any) => {
+            let name: string;
+            const video = youtubedl(url, ['--format=18'], {cwd: __dirname})
+            video.on('info', (info: any) => {
+                console.log('Download started...')
+                console.log('filename: ' + info._filename)
+                console.log('size: ' + info.size)
+                name = info._filename;
+                video.pipe(fs.createWriteStream("videos/" + name))
+            })
+            video.on('end', () => {
+                console.log('Download finished...')
+                resolve()
+            });
         })
+
     }
 
     public async downloadVideosFromArrayOfUrls() {
@@ -52,15 +59,14 @@ class YoutubeDownloader implements IyoutubeDownloader {
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
         const dataParsed = JSON.parse(data);
 
-        for (const url of dataParsed.urls) {
-            console.log(url);
-            await queue.add(async () => {
+        dataParsed.urls.forEach((url: string) => {
+            queue.add(async () => {
                 await this.downloadVideoFromUrl(this.url + "" + url);
             });
-        }
+        })
     }
 
-    
+
     private async getListOfUrls(data: string) {
         const $ = cheerio.load(data);
         let urlsArray: Array<string> = [];
