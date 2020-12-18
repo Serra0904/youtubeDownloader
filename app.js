@@ -4,6 +4,7 @@ const cheerio = require('cheerio');
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const pqueue = require('p-queue');
+const readline = require('readline');
 class YoutubeDownloader {
     constructor(url) {
         this.pathArrayUrlsToDownload = "./urlsToDownload.json";
@@ -27,19 +28,20 @@ class YoutubeDownloader {
             console.log(error);
         }
     }
-    async downloadVideoFromUrl(url) {
+    async downloadVideoFromUrl(url, endOfUrl) {
         return new Promise((resolve) => {
             let name;
             const video = youtubedl(url, ['--format=18'], { cwd: __dirname });
             video.on('info', (info) => {
-                console.log('Download started');
+                console.log('Download started...');
                 console.log('filename: ' + info._filename);
                 console.log('size: ' + info.size);
                 name = info._filename;
                 video.pipe(fs.createWriteStream("videos/" + name));
             });
             video.on('end', () => {
-                console.log("ok");
+                console.log('Download finished...');
+                this.saveToJson(this.pathArrayDownloaded, [endOfUrl]);
                 resolve();
             });
         });
@@ -48,17 +50,27 @@ class YoutubeDownloader {
         const queue = new pqueue.default({ concurrency: 1, autoStart: true });
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
         const dataParsed = JSON.parse(data);
-        dataParsed.urls.forEach((url) => {
-            queue.add(async () => {
-                await this.downloadVideoFromUrl(this.url + "" + url);
+        try {
+            dataParsed.urls.forEach((url) => {
+                if (this.haveUrlAlreadyDownloaded(url)) {
+                    console.log("déjà téléchargé, je passe..");
+                    return;
+                }
+                else {
+                    queue.add(async () => {
+                        await this.downloadVideoFromUrl(this.url + "" + url, url);
+                    });
+                }
             });
-        });
-        // for (const url of dataParsed.urls) {
-        //     console.log(url);
-        //     await queue.add(() => {
-        //         return this.downloadVideoFromUrl(this.url + "" + url);
-        //     });
-        // }
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+    haveUrlAlreadyDownloaded(url) {
+        const data = fs.readFileSync(this.pathArrayDownloaded);
+        const dataParsed = JSON.parse(data);
+        return dataParsed.urls.includes(url);
     }
     async getListOfUrls(data) {
         const $ = cheerio.load(data);
@@ -66,6 +78,7 @@ class YoutubeDownloader {
         $('a#thumbnail').each((index, element) => {
             if (!element)
                 return;
+            console.log("lien de la vidéo : ", $(element).attr("href"));
             urlsArray.push($(element).attr("href"));
         });
         return urlsArray;
@@ -113,5 +126,55 @@ class YoutubeDownloader {
         await this.saveToJson(this.pathArrayUrlsToDownload, arrayOfUrls);
     }
 }
-const yt = new YoutubeDownloader("https://www.youtube.com/user/IciJapon/videos");
-yt.downloadVideosFromArrayOfUrls();
+//const yt = new YoutubeDownloader("https://www.youtube.com/user/IciJapon/videos");
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+let url = "";
+const question1 = () => {
+    return new Promise((resolve) => {
+        rl.question('Bonjour, quelle est la chaîne youtube que vous souhaitez voler ? ', async (answer) => {
+            const yt = new YoutubeDownloader(`${answer}`);
+            url = answer;
+            console.log(`Initialisation...`);
+            setTimeout(() => {
+                console.log('.....');
+            }, 1000);
+            setTimeout(() => {
+                console.log('.....');
+            }, 2000);
+            setTimeout(() => {
+                console.log('Téléchargement de la liste des vidéos...');
+            }, 3000);
+            await yt.getAndSaveUrlsToDownload();
+            console.log('Liste enregisté dans le fichier urlsToDownload.json');
+            console.log(`Le programme va enregistrer toutes le nom de toutes les vidéos que vous avez téléchargé, 
+                         vous pouvez donc stopper le robot à tout moment, et reprendre à où vous en etiez.
+                        `);
+            resolve();
+        });
+    });
+};
+const question2 = () => {
+    return new Promise((resolve) => {
+        rl.question('Souhaitez-vous démarrer le téléchargement ? ', async (answer) => {
+            const yt = new YoutubeDownloader(url);
+            switch (answer) {
+                case ("oui"):
+                    await yt.downloadVideosFromArrayOfUrls();
+                    resolve();
+                    break;
+                case ("no"):
+                    console.log("Fin du programme.");
+                    resolve();
+            }
+        });
+    });
+};
+const main = async () => {
+    await question1();
+    await question2();
+    rl.close();
+};
+main();
