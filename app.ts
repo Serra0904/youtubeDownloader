@@ -18,7 +18,11 @@ class YoutubeDownloader implements IyoutubeDownloader {
         this.url = url;
     }
 
-    private async fetchHtmlFromYoutube() {
+    /**
+     * Télécharge le html d'une page youtube passée dans le constructeur
+     * @private
+     */
+    private async fetchHtmlFromYoutube(): Promise<any> {
         try {
             const browser = await puppeteer.launch({
                 headless: true
@@ -36,7 +40,12 @@ class YoutubeDownloader implements IyoutubeDownloader {
         }
     }
 
-    public async downloadVideoFromUrl(url: string, endOfUrl: string) {
+    /**
+     * Télécharge le fichier MP4 d'une vidéo youtube
+     * @param url
+     * @param endOfUrl
+     */
+    public async downloadVideoFromUrl(url: string, endOfUrl: string): Promise<void> {
         return new Promise((resolve: any) => {
             let name: string;
             const video = youtubedl(url, ['--format=18'], {cwd: __dirname})
@@ -56,7 +65,10 @@ class YoutubeDownloader implements IyoutubeDownloader {
 
     }
 
-    public async downloadVideosFromArrayOfUrls() {
+    /**
+     * Va mettre en queueu la liste des vidéos à télécharger
+     */
+    public async downloadVideosFromArrayOfUrls(): Promise<void> {
         const queue = new pqueue.default({concurrency: 1, autoStart: true});
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
         const dataParsed = JSON.parse(data);
@@ -76,6 +88,11 @@ class YoutubeDownloader implements IyoutubeDownloader {
         }
     }
 
+    /**
+     * Vérifie si la vidéo à déjà été téléchargée ou pas
+     * @param url
+     * @private
+     */
     private haveUrlAlreadyDownloaded(url: string): boolean {
         const data = fs.readFileSync(this.pathArrayDownloaded);
         const dataParsed = JSON.parse(data);
@@ -83,7 +100,12 @@ class YoutubeDownloader implements IyoutubeDownloader {
     }
 
 
-    private async getListOfUrls(data: string) {
+    /**
+     * Récupère le nom de toutes les vidéos à télécharger
+     * @param data
+     * @private
+     */
+    private async getListOfUrls(data: string): Promise<Array<string>> {
         const $ = cheerio.load(data);
         let urlsArray: Array<string> = [];
         $('a#thumbnail').each((index: number, element: string) => {
@@ -94,7 +116,12 @@ class YoutubeDownloader implements IyoutubeDownloader {
         return urlsArray;
     }
 
-    private async autoScroll(page: any) {
+    /**
+     * Va scroll la page automatiquement afin de charger toutes les vidéos sur youtube
+     * @param page
+     * @private
+     */
+    private async autoScroll(page: any): Promise<void> {
         try {
             await page.evaluate(async (_: any) => {
                     await new Promise(async (resolve) => {
@@ -118,7 +145,14 @@ class YoutubeDownloader implements IyoutubeDownloader {
         }
     }
 
-    private async saveToJson(path: string, contentToAdd: Array<string>, force?: false) {
+    /**
+     * Enregistre la liste des noms dans un fichier json
+     * @param path
+     * @param contentToAdd
+     * @param force
+     * @private
+     */
+    private async saveToJson(path: string, contentToAdd: Array<string>, force?: false): Promise<void> {
         if (!fs.existsSync(path)) fs.writeFileSync(path, '{"urls":[]}');
         let file = fs.readFileSync(path);
         let fileParsed = JSON.parse(file);
@@ -134,6 +168,16 @@ class YoutubeDownloader implements IyoutubeDownloader {
 
     }
 
+    private isUrlValid(url: string): boolean {
+        const protocol = url.slice(0, 8);
+        const domain = url.slice(8, 23);
+        if (protocol === "https://" && domain === "www.youtube.com") return true;
+        return false
+    }
+
+    /**
+     * `Télécharge la page et retourne la liste des vidéos à télécharger
+     */
     public async getAndSaveUrlsToDownload() {
         const html = await this.fetchHtmlFromYoutube();
         const arrayOfUrls = await this.getListOfUrls(html);
@@ -198,6 +242,7 @@ const main = async () => {
 }
 
 main();
+
 
 
 

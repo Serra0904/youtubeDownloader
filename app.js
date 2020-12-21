@@ -11,6 +11,10 @@ class YoutubeDownloader {
         this.pathArrayDownloaded = "./urlsDownloaded.json";
         this.url = url;
     }
+    /**
+     * Télécharge le html d'une page youtube passée dans le constructeur
+     * @private
+     */
     async fetchHtmlFromYoutube() {
         try {
             const browser = await puppeteer.launch({
@@ -28,6 +32,11 @@ class YoutubeDownloader {
             console.log(error);
         }
     }
+    /**
+     * Télécharge le fichier MP4 d'une vidéo youtube
+     * @param url
+     * @param endOfUrl
+     */
     async downloadVideoFromUrl(url, endOfUrl) {
         return new Promise((resolve) => {
             let name;
@@ -46,6 +55,9 @@ class YoutubeDownloader {
             });
         });
     }
+    /**
+     * Va mettre en queueu la liste des vidéos à télécharger
+     */
     async downloadVideosFromArrayOfUrls() {
         const queue = new pqueue.default({ concurrency: 1, autoStart: true });
         const data = fs.readFileSync(this.pathArrayUrlsToDownload);
@@ -67,11 +79,21 @@ class YoutubeDownloader {
             console.log(error);
         }
     }
+    /**
+     * Vérifie si la vidéo à déjà été téléchargée ou pas
+     * @param url
+     * @private
+     */
     haveUrlAlreadyDownloaded(url) {
         const data = fs.readFileSync(this.pathArrayDownloaded);
         const dataParsed = JSON.parse(data);
         return dataParsed.urls.includes(url);
     }
+    /**
+     * Récupère le nom de toutes les vidéos à télécharger
+     * @param data
+     * @private
+     */
     async getListOfUrls(data) {
         const $ = cheerio.load(data);
         let urlsArray = [];
@@ -83,6 +105,11 @@ class YoutubeDownloader {
         });
         return urlsArray;
     }
+    /**
+     * Va scroll la page automatiquement afin de charger toutes les vidéos sur youtube
+     * @param page
+     * @private
+     */
     async autoScroll(page) {
         try {
             await page.evaluate(async (_) => {
@@ -106,6 +133,13 @@ class YoutubeDownloader {
             console.log(error);
         }
     }
+    /**
+     * Enregistre la liste des noms dans un fichier json
+     * @param path
+     * @param contentToAdd
+     * @param force
+     * @private
+     */
     async saveToJson(path, contentToAdd, force) {
         if (!fs.existsSync(path))
             fs.writeFileSync(path, '{"urls":[]}');
@@ -120,13 +154,22 @@ class YoutubeDownloader {
         }
         fs.writeFileSync(path, JSON.stringify(fileParsed));
     }
+    isUrlValid(url) {
+        const protocol = url.slice(0, 8);
+        const domain = url.slice(8, 23);
+        if (protocol === "https://" && domain === "www.youtube.com")
+            return true;
+        return false;
+    }
+    /**
+     * `Télécharge la page et retourne la liste des vidéos à télécharger
+     */
     async getAndSaveUrlsToDownload() {
         const html = await this.fetchHtmlFromYoutube();
         const arrayOfUrls = await this.getListOfUrls(html);
         await this.saveToJson(this.pathArrayUrlsToDownload, arrayOfUrls);
     }
 }
-//const yt = new YoutubeDownloader("https://www.youtube.com/user/IciJapon/videos");
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -134,7 +177,7 @@ const rl = readline.createInterface({
 let url = "";
 const question1 = () => {
     return new Promise((resolve) => {
-        rl.question('Bonjour, quelle est la chaîne youtube que vous souhaitez voler ? ', async (answer) => {
+        rl.question('Bonjour, quelle est la chaîne youtube que vous souhaitez télécharger ? ', async (answer) => {
             const yt = new YoutubeDownloader(`${answer}`);
             url = answer;
             console.log(`Initialisation...`);
